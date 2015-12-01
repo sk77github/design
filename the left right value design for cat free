@@ -1,0 +1,179 @@
+the table design:
+
+CREATE TABLE `shop_cat` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `lft` int(11) NOT NULL,
+  `rgt` int(11) NOT NULL,
+  `level` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8
+
+table data:
+
++----+--------+-----+-----+-------+
+| id | name   | lft | rgt | level |
++----+--------+-----+-----+-------+
+| 13 | 食品   |   1 |  20 |     0 |
+| 14 | 蛋     |   2 |   7 |     1 |
+| 15 | 肉     |   8 |  19 |     1 |
+| 16 | 牛肉   |   9 |  10 |     2 |
+| 17 | 猪肉   |  11 |  12 |     2 |
+| 18 | 鸡蛋   |   3 |   6 |     2 |
+| 19 | 土鸡蛋 |   4 |   5 |     3 |
++----+--------+-----+-----+-------+
+
+the code:
+
+
+ public function index(){
+
+       
+        if(empty($name)){
+            echo '请输入分类';
+            exit;
+        }
+
+        $this->displayTree();
+        //$this->deleteNode($name);
+        exit;
+
+        $tableData = $this->isEmptyTable();
+        if(empty($tableData)){
+            //数据库表内无数据 插入根节点
+            $this->insertRoot($name);
+        }else{
+            $rgt = $this->getRgtValue($parentName);
+            $parentLevel = $this->getLevel($parentName);
+            if(empty($rgt)){
+                echo '父分类不存在，请确认传参正确';
+                exit;
+            }
+            if($this->isHaveName($name)){
+                echo '分类'.$name.'已存在';
+                exit;
+            }
+            $this->insertNode($rgt,$name,$parentLevel);
+        }
+    }
+
+    /**
+     * 显示树形结构
+     * @return
+     **/
+    private function displayTree(){
+            $rootLftRgtValue = $this->getRootLftRgtValue();
+
+            // 获得根节点的所有子节点
+            $allNodeOrderByLft = $this->getNodeOrderByLft($rootLftRgtValue);
+
+            foreach($allNodeOrderByLft as $row){
+                echo str_repeat('***',$row['level']) . $row['name'] . "<br>";
+            }
+
+    }
+
+    /**
+     * 添加节点
+     * @param	rgt
+     * @param   name
+     * @return int
+     **/
+    private function insertNode($rgt = '', $name = '', $parentLevel = ''){
+        update(array('rgt' => new \Zend\Db\Sql\Expression('rgt + 2')), array('rgt >= ?' => $rgt));
+        update(array('lft' => new \Zend\Db\Sql\Expression('lft + 2')), array('lft >= ?' => $rgt));
+        $data = array(
+            'name' => $name,
+            'lft' => $rgt,
+            'rgt' =>$rgt + 1,
+            'level' =>$parentLevel + 1,
+        );
+        $row = createRow($data);
+        $row->save();
+        
+    }
+
+    /**
+     * 删除节点
+     * @param   name
+     * @return
+     **/
+    private function deleteNode($name = ''){
+
+        select()->where(array('name'=>$name))->columns(array('lft', 'rgt'));
+        $rows = $rowset->toArray();
+       
+        $rgt = $rows[0]['rgt'];
+        $lft = $rows[0]['lft'];
+      
+        delete(array('lft >= ?'=>$lft, 'rgt <= ?' => $rgt));
+
+        update(array('rgt' => new \Zend\Db\Sql\Expression('rgt - ('.$rgt.'-'.$lft.' + 1)')), array('rgt > ?' => $rgt));
+        update(array('lft' => new \Zend\Db\Sql\Expression('lft - ('.$rgt.'-'.$lft.' + 1)')), array('lft > ?' => $lft));
+
+    }
+
+    /**
+     * 获取右值
+     * @param	name
+     * @return int
+     **/
+    private function getRgtValue($name = ''){
+       
+    }
+
+    /**
+     *分类是否存在
+     * @param	name
+     * @return int
+     **/
+    private function isHaveName($name = ''){
+      
+    }
+
+    /**
+     * 获取层级
+     * @param	name
+     * @return int
+     **/
+    private function getLevel($name = ''){
+       
+    }
+
+    /**
+     * 获得某个节点的所有子节点
+     * @param	array lftRgt
+     * @return int
+     **/
+    private function getNodeOrderByLft($lftRgt = ''){
+        select()->where(array('lft >= ?'=> $lftRgt['lft'], 'lft <= ?' => $lftRgt['rgt']))->order(array('lft ASC'));;
+        $rows = $rowset->toArray();
+       
+    }
+
+    /**
+     * 取得根节点左右值
+     * @return array
+     **/
+    private function getRootLftRgtValue(){
+       
+    }
+
+    /**
+     * 从数据库中查一条数据 以判断是否为空表
+     * @param
+     * @return int
+     **/
+    private function isEmptyTable(){
+       
+    }
+
+    /**
+     * 插入根节点
+     * @param	name
+     * @return int
+     **/
+    private function insertRoot($name = ''){
+        
+    }
