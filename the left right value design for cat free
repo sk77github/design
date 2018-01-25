@@ -1,3 +1,46 @@
+
+这个函数可以将name和parent结构的表自动转换成带有左右值的数据表。
+以下是代码：
+
+复制代码
+<?php
+function rebuild_tree($parent, $left) {
+    // the right value of this node is the left value + 1
+    $right = $left+1;
+    // get all children of this node
+    $result = mysql_query("
+        SELECT name
+        FROM tree
+        WHERE parent = '" . $parent . "'
+        ;"
+    );
+    while ($row = mysql_fetch_array($result)) {
+        // recursive execution of this function for each
+        // child of this node
+        // $right is the current right value, which is
+        // incremented by the rebuild_tree function
+        $right = rebuild_tree($row['name'], $right);
+    }
+    // we've got the left value, and now that we've processed
+    // the children of this node we also know the right value
+    mysql_query("
+        UPDATE tree
+        SET
+            lft = '" . $left . "',
+            rgt= '" . $right . "'
+        WHERE name = '" . $parent . "'
+        ;"
+    );
+    // return the right value of this node + 1
+    return $right + 1;
+}
+?>
+复制代码
+当然这个函数是一个递归函数，我们需要从根节点开始运行这个函数来重建一个带有左右值的树
+
+rebuild_tree('Food',1);
+
+
 the table design:
 
 CREATE TABLE `shop_cat` (
